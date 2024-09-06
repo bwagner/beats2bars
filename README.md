@@ -33,7 +33,7 @@ To make them available in [Audacity](https://www.audacityteam.org/) as labels, t
 ╭─ Arguments ──────────────────────────────────────────────────────────────────╮
 │   start_beat         [START_BEAT]     The beat number to start labeling      │
 │                                       from. Beats before this are skipped.   │
-│                                       [default: 0]                           │
+│                                       [default: 1]                           │
 │   beats_per_bar      [BEATS_PER_BAR]  how many beats per bar, aka "time      │
 │                                       signature"                             │
 │                                       [default: 4]                           │

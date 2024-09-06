@@ -90,7 +90,7 @@ if __name__ == "__main__":
     @app.command()
     def main(
         start_beat: int = typer.Argument(
-            0,
+            1,
             help="The beat number to start labeling from. Beats before this are skipped.",
         ),
         beats_per_bar: int = typer.Argument(
