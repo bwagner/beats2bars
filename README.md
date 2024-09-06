@@ -24,13 +24,20 @@ To make them available in [Audacity](https://www.audacityteam.org/) as labels, t
  Converts a text file with times in a column or Audacity style labels (two      
  columns + optional label) to Audacity style labels and writes them to stdout.  
                                                                                 
+ Usage: beats2bars.py [OPTIONS] [START_BEAT] [BEATS_PER_BAR] [START]            
+                      [INPUT_FILE]                                              
+                                                                                
+ Converts a text file with times in a column or Audacity style labels (two      
+ columns + optional label) to Audacity style labels and writes them to stdout.  
+                                                                                
 ╭─ Arguments ──────────────────────────────────────────────────────────────────╮
-│   start_beat         [START_BEAT]     how many beats to skip before starting │
+│   start_beat         [START_BEAT]     The beat number to start labeling      │
+│                                       from. Beats before this are skipped.   │
 │                                       [default: 0]                           │
 │   beats_per_bar      [BEATS_PER_BAR]  how many beats per bar, aka "time      │
 │                                       signature"                             │
 │                                       [default: 4]                           │
-│   start              [START]          how to start numbering [default: 1]    │
+│   start              [START]          where to start numbering [default: 1]  │
 │   input_file         [INPUT_FILE]     [default: -]                           │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────╮

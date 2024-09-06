@@ -90,12 +90,13 @@ if __name__ == "__main__":
     @app.command()
     def main(
         start_beat: int = typer.Argument(
-            0, help="how many beats to skip before starting"
+            0,
+            help="The beat number to start labeling from. Beats before this are skipped.",
         ),
         beats_per_bar: int = typer.Argument(
-            4, help='how many beats per bar, aka "time signature"'
+            4, help='How many beats per bar, aka "time signature"'
         ),
-        start: int = typer.Argument(1, help="how to start numbering"),
+        start: int = typer.Argument(1, help="Where to start numbering"),
         input_file: str = typer.Argument("-"),
     ):
         """
