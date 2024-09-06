@@ -44,3 +44,7 @@ To make them available in [Audacity](https://www.audacityteam.org/) as labels, t
 │ --help          Show this message and exit.                                  │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```                                                                                
+Example invocation (I want to startk counting 4/4 bars starting at beat 3)
+```shell
+beats2bars.py 3 4 1 < beats.txt > audacity_bars.txt
+```
