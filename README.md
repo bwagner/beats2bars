@@ -1,8 +1,8 @@
 # beats2bars
 
-I use DBNBeatTracker to identify beats in a track:
-(DBNBeatTracker gets installed when you `pip install` [madmom](https://github.com/CPJKU/madmom))
-```shell
+I use `DBNBeatTracker` to identify beats in a track:
+(`DBNBeatTracker` gets installed when you `pip install` [madmom](https://github.com/CPJKU/madmom))
+```console
 DBNBeatTracker single music.m4a > beats.txt
 ```
 The resulting beats are a single column of seconds as decimals, e.g.
@@ -45,6 +45,6 @@ To make them available in [Audacity](https://www.audacityteam.org/) as labels, t
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```                                                                                
 Example invocation (I want to count 4/4 bars starting at beat 3)
-```shell
+```console
 beats2bars.py 3 4 1 < beats.txt > audacity_bars.txt
 ```
