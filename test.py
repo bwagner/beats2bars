@@ -101,5 +101,6 @@ def test_start_beat_skips_beats():
         == expected_output
     )
 
+
 if __name__ == "__main__":
     pytest.main([__file__])

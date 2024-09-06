@@ -21,14 +21,13 @@ def beats2bars(input_generator, start_beat: int, beats_per_bar: int, start: int)
     """
     ERR = 0.03  # +/- error allowance for bpm
     DDMAX = 0.1  # Max difference between consecutive time differences
-    UNSET = -1  # Constant to represent unset variables
 
     lbl_counter = 0
     lbl_no = start
     BPB = beats_per_bar
 
-    pd = UNSET  # Previous delta between times
-    pv = UNSET  # Previous value
+    pd = None  # Previous delta between times
+    pv = None  # Previous value
 
     beat_index = 1
 
@@ -55,18 +54,19 @@ def beats2bars(input_generator, start_beat: int, beats_per_bar: int, start: int)
 
             lbl_counter += 1
 
-            if pv != UNSET:
+            if pv is not None:  # Only proceed if pv is initialized
                 d = current_time - pv
-                dd = d - pd  # Delta of deltas
-                if pd != UNSET and dd > DDMAX:
-                    sys.stderr.write(
-                        f"# diff = {dd} @ {current_time} T {lbl_no - 1} pd = {pd} d = {d}\n"
-                    )
-                    bpm = 60 / pd
-                    sys.stderr.write(
-                        f"# (guessed bpm: {bpm}) rerun DBNBeatTracker with --min_bpm {(1 - ERR) * bpm} --max_bpm {(1 + ERR) * bpm}\n"
-                    )
-                pd = d
+                if pd is not None:  # Only proceed if pd is initialized
+                    dd = d - pd  # Delta of deltas
+                    if dd > DDMAX:
+                        sys.stderr.write(
+                            f"# diff = {dd} @ {current_time} T {lbl_no - 1} pd = {pd} d = {d}\n"
+                        )
+                        bpm = 60 / pd
+                        sys.stderr.write(
+                            f"# (guessed bpm: {bpm}) rerun DBNBeatTracker with --min_bpm {(1 - ERR) * bpm} --max_bpm {(1 + ERR) * bpm}\n"
+                        )
+                pd = d  # Update pd
 
             pv = current_time  # Set the previous value to the current time
 
@@ -89,7 +89,9 @@ if __name__ == "__main__":
 
     @app.command()
     def main(
-        start_beat: int = typer.Argument(0, help="how many beats to skip before starting"),
+        start_beat: int = typer.Argument(
+            0, help="how many beats to skip before starting"
+        ),
         beats_per_bar: int = typer.Argument(
             4, help='how many beats per bar, aka "time signature"'
         ),
@@ -116,7 +118,9 @@ if __name__ == "__main__":
         else:
             with open(input_file, "r") as f:
                 input_gen = (line for line in f)
-                for output_line in beats2bars(input_gen, start_beat, beats_per_bar, start):
+                for output_line in beats2bars(
+                    input_gen, start_beat, beats_per_bar, start
+                ):
                     print(output_line)
 
     app()
