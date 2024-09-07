@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from pathlib import Path
 from typing import Annotated
 
 
@@ -116,10 +117,10 @@ if __name__ == "__main__":
         Converts a text file with times in a column or Audacity style labels
         (two columns + optional label) to Audacity style labels and writes them to stdout.
         """
-        prg = sys.argv[0]
+        prg = Path(__file__).name
 
         sys.stderr.write(
-            f"{prg} using OFS {inv(str(start_beat))} BPB {inv(str(beats_per_bar))} STA {inv(str(start))}\n"
+            f"{prg} using start beat {inv(str(start_beat))} beats per bar {inv(str(beats_per_bar))} start number {inv(str(start))}\n"
         )
         sys.stderr.write(
             "If this is not what you intended, make sure to add a blank after the parameters before redirecting >\n"
