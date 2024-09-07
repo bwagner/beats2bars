@@ -102,5 +102,41 @@ def test_start_beat_skips_beats():
     )
 
 
+def test_start_beat_skips_beats_no_prefix():
+    input_data = dedent(
+        """
+        1.0
+        2.0
+        3.0
+        4.0
+        5.0
+    """
+    ).split("\n")
+    expected_output = ["4.0\t4.0\t1"]
+
+    assert (
+        list(beats2bars(iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=""))
+        == expected_output
+    )
+
+
+def test_start_beat_skips_beats_no_prefix2():
+    input_data = dedent(
+        """
+        1.0
+        2.0
+        3.0
+        4.0
+        5.0
+    """
+    ).split("\n")
+    expected_output = ["4.0\t4.0\t1"]
+
+    assert (
+        list(beats2bars(iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=None))
+        == expected_output
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
