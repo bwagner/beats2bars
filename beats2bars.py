@@ -3,7 +3,14 @@
 from typing import Annotated
 
 
-def beats2bars(input_generator, start_beat: int, beats_per_bar: int, start: int, prefix: str = "T "):
+def beats2bars(
+    input_generator,
+    start_beat: int,
+    beats_per_bar: int,
+    start: int,
+    numbers: bool = True,
+    prefix: str = "T ",
+):
     """
     Processes the input from a generator, converting a sequence of beat timestamps
     into labeled bars based on the specified start_beat and beats per bar ready for
@@ -52,7 +59,8 @@ def beats2bars(input_generator, start_beat: int, beats_per_bar: int, start: int,
 
         if beat_index >= start_beat:
             if (lbl_counter % BPB) == 0:
-                yield f"{current_time}\t{current_time}\t{prefix}{lbl_no}"
+                lbl = f"{prefix}{lbl_no}" if numbers else prefix
+                yield f"{current_time}\t{current_time}\t{lbl}"
                 lbl_no += 1
 
             lbl_counter += 1
@@ -101,7 +109,8 @@ if __name__ == "__main__":
         ),
         start: int = typer.Argument(1, help="Where to start numbering"),
         input_file: str = typer.Argument("-"),
-        prefix: Annotated[bool, typer.Option(help="Prefix for labels")] = True
+        prefix: Annotated[bool, typer.Option(help="Prefix for labels")] = True,
+        numbers: Annotated[bool, typer.Option(help="numbered labels")] = True,
     ):
         """
         Converts a text file with times in a column or Audacity style labels
@@ -120,13 +129,15 @@ if __name__ == "__main__":
 
         if input_file == "-":
             input_gen = (line for line in sys.stdin)
-            for output_line in beats2bars(input_gen, start_beat, beats_per_bar, start, prefix):
+            for output_line in beats2bars(
+                input_gen, start_beat, beats_per_bar, start, numbers, prefix
+            ):
                 print(output_line)
         else:
             with open(input_file, "r") as f:
                 input_gen = (line for line in f)
                 for output_line in beats2bars(
-                    input_gen, start_beat, beats_per_bar, start, prefix
+                    input_gen, start_beat, beats_per_bar, start, numbers, prefix
                 ):
                     print(output_line)
 

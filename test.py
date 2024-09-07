@@ -115,7 +115,11 @@ def test_start_beat_skips_beats_no_prefix():
     expected_output = ["4.0\t4.0\t1"]
 
     assert (
-        list(beats2bars(iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=""))
+        list(
+            beats2bars(
+                iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=""
+            )
+        )
         == expected_output
     )
 
@@ -133,7 +137,60 @@ def test_start_beat_skips_beats_no_prefix2():
     expected_output = ["4.0\t4.0\t1"]
 
     assert (
-        list(beats2bars(iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=None))
+        list(
+            beats2bars(
+                iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=None
+            )
+        )
+        == expected_output
+    )
+
+
+def test_start_beat_skips_beats_no_num():
+    input_data = dedent(
+        """
+        1.0
+        2.0
+        3.0
+        4.0
+        5.0
+    """
+    ).split("\n")
+    expected_output = ["4.0\t4.0\tT "]
+
+    assert (
+        list(
+            beats2bars(
+                iter(input_data), start_beat=4, beats_per_bar=2, start=1, numbers=False
+            )
+        )
+        == expected_output
+    )
+
+
+def test_start_beat_skips_beats_no_prefix_no_num():
+    input_data = dedent(
+        """
+        1.0
+        2.0
+        3.0
+        4.0
+        5.0
+    """
+    ).split("\n")
+    expected_output = ["4.0\t4.0\t"]
+
+    assert (
+        list(
+            beats2bars(
+                iter(input_data),
+                start_beat=4,
+                beats_per_bar=2,
+                start=1,
+                numbers=False,
+                prefix=None,
+            )
+        )
         == expected_output
     )
 
