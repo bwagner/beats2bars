@@ -6,7 +6,7 @@ I use `DBNBeatTracker` to identify beats in a track:
 DBNBeatTracker single music.m4a > beats.txt
 ```
 The resulting beats are a single column of seconds as decimals, e.g.
-```
+```console
 0.240
 0.690
 1.130
@@ -17,7 +17,7 @@ The resulting beats are a single column of seconds as decimals, e.g.
 ...
 ```
 To make them available in [Audacity](https://www.audacityteam.org/) as labels, they need to be of the form of _two_ columns with an optional label. In addition, I'd like to have bar numbers as labels in Audacity. That's where this script comes in.
-```
+```console
  Usage: beats2bars.py [OPTIONS] [START_BEAT] [BEATS_PER_BAR] [START]
                       [INPUT_FILE]
 
