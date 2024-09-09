@@ -17,19 +17,20 @@ The resulting beats are a single column of seconds as decimals, e.g.
 ...
 ```
 To make them available in [Audacity](https://www.audacityteam.org/) as labels, they need to be of the form of _two_ columns with an optional label. In addition, I'd like to have bar numbers as labels in Audacity. That's where this script comes in.
-```                                                                                
- Usage: beats2bars.py [OPTIONS] [START_BEAT] [BEATS_PER_BAR] [START]            
-                      [INPUT_FILE]                                              
-                                                                                
- Converts a text file with times in a column or Audacity style labels (two      
- columns + optional label) to Audacity style labels and writes them to stdout.  
-                                                                                
- Usage: beats2bars.py [OPTIONS] [START_BEAT] [BEATS_PER_BAR] [START]            
-                      [INPUT_FILE]                                              
-                                                                                
- Converts a text file with times in a column or Audacity style labels (two      
- columns + optional label) to Audacity style labels and writes them to stdout.  
-                                                                                
+```
+ Usage: beats2bars.py [OPTIONS] [START_BEAT] [BEATS_PER_BAR] [START]
+                      [INPUT_FILE]
+
+ Converts a text file with times in a column or Audacity style labels (two
+ columns + optional label) to Audacity style labels and writes them to stdout.
+
+ Usage: beats2bars.py [OPTIONS] [START_BEAT] [BEATS_PER_BAR] [START]
+                      [INPUT_FILE]
+
+ Converts a text file with times in a column or Audacity style labels (two
+ columns + optional label) to Audacity style labels and writes them to stdout.
+ BPM are reported to stderr at the end.
+
 ╭─ Arguments ──────────────────────────────────────────────────────────────────╮
 │   start_beat         [START_BEAT]     The beat number to start labeling      │
 │                                       from. Beats before this are skipped.   │
@@ -43,8 +44,8 @@ To make them available in [Audacity](https://www.audacityteam.org/) as labels, t
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --help          Show this message and exit.                                  │
 ╰──────────────────────────────────────────────────────────────────────────────╯
-```                                                                                
+```
 Example invocation (I want to count 4/4 bars starting at beat 3)
 ```console
-beats2bars.py 3 4 1 < beats.txt > audacity_bars.txt
+beats2bars.py 3 4 1 beats.txt > audacity_bars.txt
 ```
