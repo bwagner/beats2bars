@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from statistics import mean
 from typing import Generator, Iterator, Tuple
 
 
@@ -39,10 +40,9 @@ def beats2bars(
 
     lbl_counter = 0
     lbl_no = start
-    BPB = beats_per_bar
 
-    pd = None  # Previous delta between times
-    pv = None  # Previous value
+    ptd = None  # Previous delta between times
+    prev_time = None
 
     beat_index = 1
     prefix = prefix or ""
@@ -54,51 +54,42 @@ def beats2bars(
         if not line:
             continue
 
-        columns = line.split()
-        if len(columns) == 0:
+        if len(columns := line.split()) == 0:
             continue
 
-        # Handle the case where the input is a single column of floats
-        if len(columns) == 1:
-            current_time = float(columns[0])
-        else:
-            # Handle the Audacity label format (two or three columns)
-            current_time = float(columns[0])  # First column is the time
+        current_time = float(columns[0])
 
         if beat_index >= start_beat:
-            if (lbl_counter % BPB) == 0:
+            if (lbl_counter % beats_per_bar) == 0:
                 lbl = f"{prefix}{lbl_no}" if numbers else prefix
                 yield f"{current_time}\t{current_time}\t{lbl}"
                 lbl_no += 1
 
             lbl_counter += 1
 
-            if pv is not None:  # Only proceed if pv is initialized
-                d = current_time - pv
-                durations.append(d)  # Collect durations for average calculation
-                if pd is not None:  # Only proceed if pd is initialized
-                    dd = d - pd  # Delta of deltas
+            if prev_time is not None:
+                d = current_time - prev_time
+                durations.append(d)
+                if ptd is not None:
+                    dd = d - ptd  # Delta of deltas
                     if dd > DDMAX:
                         sys.stderr.write(
-                            f"# diff = {dd} @ {current_time} T {lbl_no - 1} pd = {pd} d = {d}\n"
+                            f"# diff = {dd} @ {current_time} T {lbl_no - 1} ptd = {ptd} d = {d}\n"
                         )
-                        bpm = 60 / pd
+                        bpm = 60 / ptd
                         sys.stderr.write(
                             f"# (guessed bpm: {bpm}) rerun DBNBeatTracker with --min_bpm {(1 - ERR) * bpm} --max_bpm {(1 + ERR) * bpm}\n"
                         )
-                pd = d  # Update pd
+                ptd = d
 
-            pv = current_time  # Set the previous value to the current time
+            prev_time = current_time
 
-        beat_index += 1  # Increment the beat index
+        beat_index += 1
 
-    # Calculate the average duration and BPM once the generator is exhausted
-    if durations:
-        avg_duration = sum(durations) / len(durations)
-        avg_bpm = 60 / avg_duration
-        return avg_duration, avg_bpm
-    else:
-        return 0.0, 0.0  # Default return values when no valid durations
+    # Calc avg duration and BPM upon generator exhaustion
+    avg_duration = mean(durations) if durations else 0
+    avg_bpm = 60 / avg_duration if durations else 0
+    return avg_duration, avg_bpm
 
 
 if __name__ == "__main__":
@@ -145,14 +136,12 @@ if __name__ == "__main__":
                 input_gen, start_beat, beats_per_bar, start, numbers, prefix
             )
         else:
-            # Open the file and process it while it's still open
             with open(input_file, "r") as f:
-                input_gen = [line for line in f]  # Load the file content into memory
+                input_gen = (line for line in f)
                 gen = beats2bars(
                     iter(input_gen), start_beat, beats_per_bar, start, numbers, prefix
                 )
 
-        # Manually consume the generator and handle StopIteration for stats
         try:
             while True:
                 print(next(gen))
