@@ -26,11 +26,9 @@ def test_single_column_input():
         .strip()
         .split("\n")
     )
+    output_gen, _ = beats2bars(iter(input_data), start_beat=3, beats_per_bar=3, start=1)
 
-    assert (
-        list(beats2bars(iter(input_data), start_beat=3, beats_per_bar=3, start=1))
-        == expected_output
-    )
+    assert list(output_gen) == expected_output
 
 
 def test_two_column_input():
@@ -54,21 +52,18 @@ def test_two_column_input():
         .strip()
         .split("\n")
     )
+    output_gen, _ = beats2bars(iter(input_data), start_beat=3, beats_per_bar=3, start=1)
 
-    assert (
-        list(beats2bars(iter(input_data), start_beat=3, beats_per_bar=3, start=1))
-        == expected_output
-    )
+    assert list(output_gen) == expected_output
 
 
 def test_empty_input():
     input_data = []
     expected_output = []
 
-    assert (
-        list(beats2bars(iter(input_data), start_beat=2, beats_per_bar=3, start=1))
-        == expected_output
-    )
+    output_gen, _ = beats2bars(iter(input_data), start_beat=2, beats_per_bar=3, start=1)
+
+    assert list(output_gen) == expected_output
 
 
 def test_non_numeric_input():
@@ -81,7 +76,10 @@ def test_non_numeric_input():
     ).split("\n")
 
     with pytest.raises(ValueError):
-        list(beats2bars(iter(input_data), start_beat=1, beats_per_bar=2, start=1))
+        output_gen, _ = beats2bars(
+            iter(input_data), start_beat=1, beats_per_bar=2, start=1
+        )
+        list(output_gen)  # Attempt to consume the generator
 
 
 def test_start_beat_skips_beats():
@@ -96,10 +94,9 @@ def test_start_beat_skips_beats():
     ).split("\n")
     expected_output = ["4.0\t4.0\tT 1"]
 
-    assert (
-        list(beats2bars(iter(input_data), start_beat=4, beats_per_bar=2, start=1))
-        == expected_output
-    )
+    output_gen, _ = beats2bars(iter(input_data), start_beat=4, beats_per_bar=2, start=1)
+
+    assert list(output_gen) == expected_output
 
 
 def test_start_beat_skips_beats_no_prefix():
@@ -114,14 +111,11 @@ def test_start_beat_skips_beats_no_prefix():
     ).split("\n")
     expected_output = ["4.0\t4.0\t1"]
 
-    assert (
-        list(
-            beats2bars(
-                iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=""
-            )
-        )
-        == expected_output
+    output_gen, _ = beats2bars(
+        iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=""
     )
+
+    assert list(output_gen) == expected_output
 
 
 def test_start_beat_skips_beats_no_prefix2():
@@ -136,14 +130,11 @@ def test_start_beat_skips_beats_no_prefix2():
     ).split("\n")
     expected_output = ["4.0\t4.0\t1"]
 
-    assert (
-        list(
-            beats2bars(
-                iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=None
-            )
-        )
-        == expected_output
+    output_gen, _ = beats2bars(
+        iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=None
     )
+
+    assert list(output_gen) == expected_output
 
 
 def test_start_beat_skips_beats_no_num():
@@ -158,14 +149,11 @@ def test_start_beat_skips_beats_no_num():
     ).split("\n")
     expected_output = ["4.0\t4.0\tT "]
 
-    assert (
-        list(
-            beats2bars(
-                iter(input_data), start_beat=4, beats_per_bar=2, start=1, numbers=False
-            )
-        )
-        == expected_output
+    output_gen, _ = beats2bars(
+        iter(input_data), start_beat=4, beats_per_bar=2, start=1, numbers=False
     )
+
+    assert list(output_gen) == expected_output
 
 
 def test_start_beat_skips_beats_no_prefix_no_num():
@@ -180,19 +168,37 @@ def test_start_beat_skips_beats_no_prefix_no_num():
     ).split("\n")
     expected_output = ["4.0\t4.0\t"]
 
-    assert (
-        list(
-            beats2bars(
-                iter(input_data),
-                start_beat=4,
-                beats_per_bar=2,
-                start=1,
-                numbers=False,
-                prefix=None,
-            )
-        )
-        == expected_output
+    output_gen, _ = beats2bars(
+        iter(input_data),
+        start_beat=4,
+        beats_per_bar=2,
+        start=1,
+        numbers=False,
+        prefix=None,
     )
+
+    assert list(output_gen) == expected_output
+
+
+def test_statistics():
+    input_data = dedent(
+        """
+        1.0
+        2.0
+        3.0
+        4.0
+        5.0
+        6.0
+    """
+    ).split("\n")
+
+    expected_output = [("Average bar duration", 1.0), ("Average BPM", 60.0)]
+
+    output_gen, stats_gen = beats2bars(
+        iter(input_data), start_beat=3, beats_per_bar=3, start=1
+    )
+    list(output_gen)  # output needs to be consumed before stats are available!
+    assert list(stats_gen) == expected_output
 
 
 if __name__ == "__main__":

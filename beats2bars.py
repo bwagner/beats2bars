@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Generator, Tuple
 
 
 def beats2bars(
-    input_generator,
+    input_generator: Generator[str, None, None],
     start_beat: int,
     beats_per_bar: int,
     start: int,
     numbers: bool = True,
     prefix: str = "T ",
-):
+) -> Tuple[Generator[str, None, None], Generator[Tuple[str, float], None, None]]:
     """
     Processes the input from a generator, converting a sequence of beat timestamps
     into labeled bars based on the specified start_beat and beats per bar ready for
@@ -25,9 +25,16 @@ def beats2bars(
                              Nth beat, where N is the number of beats per bar, aka
                              time signature.
         start (int): The starting label number. This is the number of the first labeled bar.
+        numbers (bool): Whether to number the labels.
+        prefix (str): The prefix for the labels (default "T ").
 
     Yields:
-        str: A formatted string in the format `<start_time>\t<start_time>\tT <label_number>`
+        A generator of labeled beats.
+
+    Returns:
+        A tuple consisting of:
+        - A generator of labeled beats.
+        - A generator of statistics (average bar duration, BPM).
     """
     ERR = 0.03  # +/- error allowance for bpm
     DDMAX = 0.1  # Max difference between consecutive time differences
@@ -42,51 +49,68 @@ def beats2bars(
     beat_index = 1
     prefix = prefix or ""
 
-    for line in input_generator:
-        line = line.strip()
-        if not line:
-            continue
+    durations = []  # Store beat durations to calculate average duration and BPM
 
-        columns = line.split()
-        if len(columns) == 0:
-            continue
+    def output_gen() -> Generator[str, None, None]:
+        nonlocal pd, pv, lbl_no, lbl_counter, beat_index, durations  # Allows access to outer variables
 
-        # Handle the case where the input is a single column of floats
-        if len(columns) == 1:
-            current_time = float(columns[0])
+        for line in input_generator:
+            line = line.strip()
+            if not line:
+                continue
+
+            columns = line.split()
+            if len(columns) == 0:
+                continue
+
+            # Handle the case where the input is a single column of floats
+            if len(columns) == 1:
+                current_time = float(columns[0])
+            else:
+                # Handle the Audacity label format (two or three columns)
+                current_time = float(columns[0])  # First column is the time
+
+            if beat_index >= start_beat:
+                if (lbl_counter % BPB) == 0:
+                    lbl = f"{prefix}{lbl_no}" if numbers else prefix
+                    yield f"{current_time}\t{current_time}\t{lbl}"
+                    lbl_no += 1
+
+                lbl_counter += 1
+
+                if pv is not None:  # Only proceed if pv is initialized
+                    d = current_time - pv
+                    durations.append(d)  # Collect durations for average calculation
+                    if pd is not None:  # Only proceed if pd is initialized
+                        dd = d - pd  # Delta of deltas
+                        if dd > DDMAX:
+                            sys.stderr.write(
+                                f"# diff = {dd} @ {current_time} T {lbl_no - 1} pd = {pd} d = {d}\n"
+                            )
+                            bpm = 60 / pd
+                            sys.stderr.write(
+                                f"# (guessed bpm: {bpm}) rerun DBNBeatTracker with --min_bpm {(1 - ERR) * bpm} --max_bpm {(1 + ERR) * bpm}\n"
+                            )
+                    pd = d  # Update pd
+
+                pv = current_time  # Set the previous value to the current time
+
+            beat_index += 1  # Increment the beat index
+
+    def stats_gen() -> Generator[Tuple[str, float], None, None]:
+        """Generator for statistics after consuming the beat label generator."""
+        if durations:
+            avg_duration = sum(durations) / len(durations)
+            avg_bpm = 60 / avg_duration
+            yield ("Average bar duration", avg_duration)
+            yield ("Average BPM", avg_bpm)
         else:
-            # Handle the Audacity label format (two or three columns)
-            current_time = float(columns[0])  # First column is the time
+            yield ("No valid durations to calculate averages.", 0)
 
-        if beat_index >= start_beat:
-            if (lbl_counter % BPB) == 0:
-                lbl = f"{prefix}{lbl_no}" if numbers else prefix
-                yield f"{current_time}\t{current_time}\t{lbl}"
-                lbl_no += 1
-
-            lbl_counter += 1
-
-            if pv is not None:  # Only proceed if pv is initialized
-                d = current_time - pv
-                if pd is not None:  # Only proceed if pd is initialized
-                    dd = d - pd  # Delta of deltas
-                    if dd > DDMAX:
-                        sys.stderr.write(
-                            f"# diff = {dd} @ {current_time} T {lbl_no - 1} pd = {pd} d = {d}\n"
-                        )
-                        bpm = 60 / pd
-                        sys.stderr.write(
-                            f"# (guessed bpm: {bpm}) rerun DBNBeatTracker with --min_bpm {(1 - ERR) * bpm} --max_bpm {(1 + ERR) * bpm}\n"
-                        )
-                pd = d  # Update pd
-
-            pv = current_time  # Set the previous value to the current time
-
-        beat_index += 1  # Increment the beat index
+    return output_gen(), stats_gen()
 
 
 if __name__ == "__main__":
-
     import sys
 
     import typer
@@ -130,16 +154,23 @@ if __name__ == "__main__":
 
         if input_file == "-":
             input_gen = (line for line in sys.stdin)
-            for output_line in beats2bars(
+            output_gen, stats_gen = beats2bars(
                 input_gen, start_beat, beats_per_bar, start, numbers, prefix
-            ):
+            )
+            for output_line in output_gen:
                 print(output_line)
+            for stat_name, stat_value in stats_gen:
+                sys.stderr.write(f"{stat_name}: {stat_value:.2f}\n")
         else:
+            # Open the file and process it while it's still open
             with open(input_file, "r") as f:
                 input_gen = (line for line in f)
-                for output_line in beats2bars(
+                output_gen, stats_gen = beats2bars(
                     input_gen, start_beat, beats_per_bar, start, numbers, prefix
-                ):
+                )
+                for output_line in output_gen:
                     print(output_line)
+                for stat_name, stat_value in stats_gen:
+                    sys.stderr.write(f"{stat_name}: {stat_value:.2f}\n")
 
     app()
