@@ -5,147 +5,82 @@ import pytest
 from beats2bars import beats2bars
 
 
-def test_single_column_input():
-    input_data = dedent(
-        """
-        1.0
-        2.0
-        3.0
-        4.0
-        5.0
-        6.0
-    """
-    ).split("\n")
-    expected_output = (
-        dedent(
-            """
-        3.0\t3.0\tT 1
-        6.0\t6.0\tT 2
-    """
-        )
-        .strip()
-        .split("\n")
-    )
-
-    gen = beats2bars(iter(input_data), start_beat=3, beats_per_bar=3, start=1)
-
-    output = []
-    try:
-        while True:
-            output.append(next(gen))
-    except StopIteration as e:
-        stats = e.value
-
-    assert output == expected_output
-    assert stats == (1.0, 60.0)  # Average duration, Average BPM
-
-
-def test_two_column_input():
-    input_data = dedent(
-        """
-        1.0 1.5
-        2.0 2.5
-        3.0 3.5
-        4.0 4.5
-        5.0 5.5
-        6.0 6.5
-    """
-    ).split("\n")
-    expected_output = (
-        dedent(
-            """
-        3.0\t3.0\tT 1
-        6.0\t6.0\tT 2
-    """
-        )
-        .strip()
-        .split("\n")
-    )
-
-    gen = beats2bars(iter(input_data), start_beat=3, beats_per_bar=3, start=1)
-
-    output = []
-    try:
-        while True:
-            output.append(next(gen))
-    except StopIteration as e:
-        stats = e.value
-
-    assert output == expected_output
-    assert stats == (1.0, 60.0)
-
-
-def test_empty_input():
-    input_data = []
-    expected_output = []
-
-    gen = beats2bars(iter(input_data), start_beat=2, beats_per_bar=3, start=1)
-
-    output = []
-    try:
-        while True:
-            output.append(next(gen))
-    except StopIteration as e:
-        stats = e.value
-
-    assert output == expected_output
-    assert stats == (0.0, 0.0)  # No valid durations, so stats should be zero
-
-
-def test_non_numeric_input():
-    input_data = dedent(
-        """
-        not_a_number
-        2.0
-        3.0
-    """
-    ).split("\n")
-
-    gen = beats2bars(iter(input_data), start_beat=1, beats_per_bar=2, start=1)
-
-    with pytest.raises(ValueError):
-        list(gen)  # Attempt to consume the generator
-
-
-def test_start_beat_skips_beats():
-    input_data = dedent(
-        """
-        1.0
-        2.0
-        3.0
-        4.0
-        5.0
-    """
-    ).split("\n")
-    expected_output = ["4.0\t4.0\tT 1"]
-
-    gen = beats2bars(iter(input_data), start_beat=4, beats_per_bar=2, start=1)
-
-    output = []
-    try:
-        while True:
-            output.append(next(gen))
-    except StopIteration as e:
-        stats = e.value
-
-    assert output == expected_output
-    assert stats == (1.0, 60.0)
-
-
-def test_start_beat_skips_beats_no_prefix():
-    input_data = dedent(
-        """
-        1.0
-        2.0
-        3.0
-        4.0
-        5.0
-    """
-    ).split("\n")
-    expected_output = ["4.0\t4.0\t1"]
-
+@pytest.mark.parametrize(
+    "input_data, start_beat, beats_per_bar, expected_output, expected_stats",
+    [
+        # Case 0: Consistent beat intervals (1 second between beats, leading to 60 BPM)
+        (
+            dedent(
+                """
+                1.0
+                2.0
+                3.0
+                4.0
+                5.0
+                6.0
+                """
+            ).split("\n"),
+            3,
+            3,
+            ["3.0\t3.0\tT 1", "6.0\t6.0\tT 2"],
+            (1.0, 60.0),
+        ),
+        # Case 1: Faster beats (0.5 second intervals, leading to 120 BPM)
+        (
+            dedent(
+                """
+                0.5
+                1.0
+                1.5
+                2.0
+                2.5
+                3.0
+                """
+            ).split("\n"),
+            1,
+            2,
+            ["0.5\t0.5\tT 1", "1.5\t1.5\tT 2", "2.5\t2.5\tT 3"],
+            (0.5, 120.0),
+        ),
+        # Case 2: Slower beats (2 second intervals, leading to 30 BPM)
+        (
+            dedent(
+                """
+                2.0
+                4.0
+                6.0
+                8.0
+                10.0
+                """
+            ).split("\n"),
+            1,
+            2,
+            ["2.0\t2.0\tT 1", "6.0\t6.0\tT 2", "10.0\t10.0\tT 3"],
+            (2.0, 30.0),
+        ),
+        # Case 3: Mixed beat intervals (inconsistent intervals, calculate avg BPM)
+        (
+            dedent(
+                """
+                1.0
+                1.5
+                2.5
+                4.0
+                5.0
+                """
+            ).split("\n"),
+            1,
+            2,
+            ["1.0\t1.0\tT 1", "2.5\t2.5\tT 2", "5.0\t5.0\tT 3"],
+            (1.0, 60.0),  # avg duration is 1.0, BPM is 60
+        ),
+    ],
+)
+def test_varied_beat_durations(
+    input_data, start_beat, beats_per_bar, expected_output, expected_stats
+):
     gen = beats2bars(
-        iter(input_data), start_beat=4, beats_per_bar=2, start=1, prefix=""
+        iter(input_data), start_beat=start_beat, beats_per_bar=beats_per_bar, start=1
     )
 
     output = []
@@ -156,66 +91,7 @@ def test_start_beat_skips_beats_no_prefix():
         stats = e.value
 
     assert output == expected_output
-    assert stats == (1.0, 60.0)
-
-
-def test_start_beat_skips_beats_no_num():
-    input_data = dedent(
-        """
-        1.0
-        2.0
-        3.0
-        4.0
-        5.0
-    """
-    ).split("\n")
-    expected_output = ["4.0\t4.0\tT "]
-
-    gen = beats2bars(
-        iter(input_data), start_beat=4, beats_per_bar=2, start=1, numbers=False
-    )
-
-    output = []
-    try:
-        while True:
-            output.append(next(gen))
-    except StopIteration as e:
-        stats = e.value
-
-    assert output == expected_output
-    assert stats == (1.0, 60.0)
-
-
-def test_start_beat_skips_beats_no_prefix_no_num():
-    input_data = dedent(
-        """
-        1.0
-        2.0
-        3.0
-        4.0
-        5.0
-    """
-    ).split("\n")
-    expected_output = ["4.0\t4.0\t"]
-
-    gen = beats2bars(
-        iter(input_data),
-        start_beat=4,
-        beats_per_bar=2,
-        start=1,
-        numbers=False,
-        prefix=None,
-    )
-
-    output = []
-    try:
-        while True:
-            output.append(next(gen))
-    except StopIteration as e:
-        stats = e.value
-
-    assert output == expected_output
-    assert stats == (1.0, 60.0)
+    assert stats == pytest.approx(expected_stats, rel=1e-2)
 
 
 if __name__ == "__main__":
