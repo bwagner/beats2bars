@@ -49,3 +49,4 @@ Example invocation (I want to count 4/4 bars starting at beat 3)
 ```console
 beats2bars.py 3 4 1 beats.txt > audacity_bars.txt
 ```
+[rebuildap](https://github.com/bwagner/rebuildap), [shift_labels](ttps://github.com/bwagner/shift_labels), [pyaudacity](ttps://github.com/bwagner/pyaudacity)
