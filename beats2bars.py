@@ -92,6 +92,16 @@ def beats2bars(
     return avg_duration, avg_bpm
 
 
+def process(gen):
+    try:
+        while True:
+            print(next(gen))
+    except StopIteration as e:
+        avg_duration, avg_bpm = e.value
+        sys.stderr.write(f"Average bar duration: {avg_duration:.2f} seconds\n")
+        sys.stderr.write(f"Average BPM: {avg_bpm:.2f}\n")
+
+
 if __name__ == "__main__":
     import typer
 
@@ -135,19 +145,13 @@ if __name__ == "__main__":
             gen = beats2bars(
                 input_gen, start_beat, beats_per_bar, start, numbers, prefix
             )
+            process(gen)
         else:
             with open(input_file, "r") as f:
                 input_gen = (line for line in f)
                 gen = beats2bars(
                     iter(input_gen), start_beat, beats_per_bar, start, numbers, prefix
                 )
-
-        try:
-            while True:
-                print(next(gen))
-        except StopIteration as e:
-            avg_duration, avg_bpm = e.value
-            sys.stderr.write(f"Average bar duration: {avg_duration:.2f} seconds\n")
-            sys.stderr.write(f"Average BPM: {avg_bpm:.2f}\n")
+                process(gen)
 
     app()
