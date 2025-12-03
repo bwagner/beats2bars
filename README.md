@@ -61,4 +61,4 @@ Example invocation (I want to count 4/4 bars starting at beat 3)
 beats2bars.py 3 4 1 beats.txt > audacity_bars.txt
 ```
 ## See also
-[rebuildap](https://github.com/bwagner/rebuildap), [shift_labels](https://github.com/bwagner/shift_labels), [quantize_labels](https://github.com/bwagner/quantize_labels), [pyaudacity](https://github.com/bwagner/pyaudacity)
+[rebuildap](https://github.com/bwagner/rebuildap), [shift_labels](https://github.com/bwagner/shift_labels), [quantize_labels](https://github.com/bwagner/quantize_labels), [audacity_legatize](https://github.com/bwagner/audacity_legatize), [pyaudacity](https://github.com/bwagner/pyaudacity)
