@@ -6,9 +6,9 @@ from beats2bars import beats2bars
 
 
 @pytest.mark.parametrize(
-    "input_data, start_beat, beats_per_bar, expected_output, expected_stats",
+    "input_data, start_beat, beats_per_bar, expected_output, expected_stats, instant",
     [
-        # Case 0: Consistent beat intervals (1 second between beats, leading to 60 BPM)
+        # Case 0: Consistent beat intervals (1 sec → 60 BPM)
         (
             dedent(
                 """
@@ -18,14 +18,17 @@ from beats2bars import beats2bars
                 4.0
                 5.0
                 6.0
-                """
-            ).split("\n"),
+            """
+            )
+            .strip()
+            .split("\n"),
             3,
             3,
-            ["3.0\t3.0\tT 1", "6.0\t6.0\tT 2"],
+            ["3.0\t6.0\tT 1"],  # spans 3 → 6
             (1.0, 60.0),
+            False,
         ),
-        # Case 1: Faster beats (0.5 second intervals, leading to 120 BPM)
+        # Case 1: Faster beats (0.5 sec → 120 BPM)
         (
             dedent(
                 """
@@ -35,14 +38,20 @@ from beats2bars import beats2bars
                 2.0
                 2.5
                 3.0
-                """
-            ).split("\n"),
+            """
+            )
+            .strip()
+            .split("\n"),
             1,
             2,
-            ["0.5\t0.5\tT 1", "1.5\t1.5\tT 2", "2.5\t2.5\tT 3"],
+            [
+                "0.5\t1.5\tT 1",
+                "1.5\t2.5\tT 2",
+            ],
             (0.5, 120.0),
+            False,
         ),
-        # Case 2: Slower beats (2 second intervals, leading to 30 BPM)
+        # Case 2: Slower beats (2 sec → 30 BPM)
         (
             dedent(
                 """
@@ -51,14 +60,20 @@ from beats2bars import beats2bars
                 6.0
                 8.0
                 10.0
-                """
-            ).split("\n"),
+            """
+            )
+            .strip()
+            .split("\n"),
             1,
             2,
-            ["2.0\t2.0\tT 1", "6.0\t6.0\tT 2", "10.0\t10.0\tT 3"],
+            [
+                "2.0\t6.0\tT 1",
+                "6.0\t10.0\tT 2",
+            ],
             (2.0, 30.0),
+            False,
         ),
-        # Case 3: Mixed beat intervals (inconsistent intervals, calculate avg BPM)
+        # Case 3: Mixed beat intervals → average 1 sec → 60 BPM
         (
             dedent(
                 """
@@ -67,20 +82,36 @@ from beats2bars import beats2bars
                 2.5
                 4.0
                 5.0
-                """
-            ).split("\n"),
+            """
+            )
+            .strip()
+            .split("\n"),
             1,
             2,
-            ["1.0\t1.0\tT 1", "2.5\t2.5\tT 2", "5.0\t5.0\tT 3"],
-            (1.0, 60.0),  # avg duration is 1.0, BPM is 60
+            [
+                "1.0\t2.5\tT 1",
+                "2.5\t5.0\tT 2",
+            ],
+            (1.0, 60.0),
+            False,
         ),
     ],
 )
 def test_varied_beat_durations(
-    input_data, start_beat, beats_per_bar, expected_output, expected_stats
+    input_data,
+    start_beat,
+    beats_per_bar,
+    expected_output,
+    expected_stats,
+    instant,
 ):
+    """Test default spanning-label behavior."""
     gen = beats2bars(
-        iter(input_data), start_beat=start_beat, beats_per_bar=beats_per_bar, start=1
+        iter(input_data),
+        start_beat=start_beat,
+        beats_per_bar=beats_per_bar,
+        start=1,
+        instant=instant,
     )
 
     output = []
@@ -92,6 +123,48 @@ def test_varied_beat_durations(
 
     assert output == expected_output
     assert stats == pytest.approx(expected_stats, rel=1e-2)
+
+
+# ------------------------------
+# Additional tests: instant mode
+# ------------------------------
+
+
+def test_instant_mode_one_bar():
+    """Ensure old behavior works (start=end timestamps)."""
+    input_data = ["1.0", "2.0", "3.0", "4.0"]
+
+    gen = beats2bars(iter(input_data), 1, 2, 1, instant=True)
+
+    out = []
+    try:
+        while True:
+            out.append(next(gen))
+    except StopIteration:
+        pass
+
+    assert out == [
+        "1.0\t1.0\tT 1",
+        "3.0\t3.0\tT 2",
+    ]
+
+
+def test_instant_mode_three_beats_per_bar():
+    input_data = ["1.0", "2.0", "3.0", "4.0", "5.0", "6.0"]
+
+    gen = beats2bars(iter(input_data), 1, 3, 1, instant=True)
+
+    out = []
+    try:
+        while True:
+            out.append(next(gen))
+    except StopIteration:
+        pass
+
+    assert out == [
+        "1.0\t1.0\tT 1",
+        "4.0\t4.0\tT 2",
+    ]
 
 
 if __name__ == "__main__":

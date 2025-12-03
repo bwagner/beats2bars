@@ -31,19 +31,30 @@ To make them available in [Audacity](https://www.audacityteam.org/) as labels, t
  columns + optional label) to Audacity style labels and writes them to stdout.
  BPM are reported to stderr at the end.
 
-╭─ Arguments ──────────────────────────────────────────────────────────────────╮
-│   start_beat         [START_BEAT]     The beat number to start labeling      │
-│                                       from. Beats before this are skipped.   │
-│                                       [default: 1]                           │
-│   beats_per_bar      [BEATS_PER_BAR]  how many beats per bar, aka "time      │
-│                                       signature"                             │
-│                                       [default: 4]                           │
-│   start              [START]          where to start numbering [default: 1]  │
-│   input_file         [INPUT_FILE]     [default: -]                           │
-╰──────────────────────────────────────────────────────────────────────────────╯
-╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --help          Show this message and exit.                                  │
-╰──────────────────────────────────────────────────────────────────────────────╯
+
+ Usage: beats2bars.py [OPTIONS] [START_BEAT] [BEATS_PER_BAR] [START]
+                      [INPUT_FILE]
+
+ Converts a text file with times in a column or Audacity-style labels (two columns + optional label) to Audacity-style label format and writes to stdout.
+
+╭─ Arguments ───────────────────────────────────────────────────────────────────╮
+│   start_beat         [START_BEAT]     The beat number to start labeling       │
+│                                       from. Beats before this are skipped.    │
+│                                       [default: 1]                            │
+│   beats_per_bar      [BEATS_PER_BAR]  How many beats per bar, aka "time       │
+│                                       signature"                              │
+│                                       [default: 4]                            │
+│   start              [START]          Where to start numbering [default: 1]   │
+│   input_file         [INPUT_FILE]     [default: -]                            │
+╰───────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────────────╮
+│ --prefix                     TEXT  Prefix for labels [default: T ]            │
+│ --numbers    --no-numbers          Include numbering in labels                │
+│                                    [default: numbers]                         │
+│ --instant    --no-instant          Use same value for start and end time      │
+│                                    of labels [default: no-instant]            │
+│ --help                             Show this message and exit.                │
+╰───────────────────────────────────────────────────────────────────────────────╯
 ```
 Example invocation (I want to count 4/4 bars starting at beat 3)
 ```console
