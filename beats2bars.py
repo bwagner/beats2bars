@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
 
 import sys
 from pathlib import Path
@@ -119,9 +123,7 @@ def process(gen):
 
 
 if __name__ == "__main__":
-    import typer
-
-    app = typer.Typer(add_completion=False)
+    import argparse
 
     def inv(text: str) -> str:
         """Inverts the color of text using ANSI escape codes."""
@@ -129,55 +131,95 @@ if __name__ == "__main__":
         NRM = "\033[0m"
         return f"{INV}{text}{NRM}"
 
-    @app.command()
-    def main(
-        start_beat: int = typer.Argument(
-            1,
-            help="The beat number to start labeling from. Beats before this are skipped.",
+    parser = argparse.ArgumentParser(
+        description=(
+            "Converts a text file with times in a column or Audacity-style labels "
+            "(two columns + optional label) to Audacity-style label format and writes to stdout."
         ),
-        beats_per_bar: int = typer.Argument(
-            4, help='How many beats per bar, aka "time signature"'
-        ),
-        start: int = typer.Argument(1, help="Where to start numbering"),
-        input_file: str = typer.Argument("-"),
-        prefix: str = typer.Option("T ", help="Prefix for labels"),
-        numbers: bool = typer.Option(True, help="Include numbering in labels"),
-        instant: bool = typer.Option(
-            False,
-            help="Use same value for start and end time of labels",
-        ),
-    ):
-        """
-        Converts a text file with times in a column or Audacity-style labels
-        (two columns + optional label) to Audacity-style label format and writes to stdout.
-        """
-        prg = Path(__file__).name
+    )
+    parser.add_argument(
+        "start_beat",
+        nargs="?",
+        type=int,
+        default=1,
+        help="The beat number to start labeling from. Beats before this are skipped.",
+    )
+    parser.add_argument(
+        "beats_per_bar",
+        nargs="?",
+        type=int,
+        default=4,
+        help='How many beats per bar, aka "time signature"',
+    )
+    parser.add_argument(
+        "start",
+        nargs="?",
+        type=int,
+        default=1,
+        help="Where to start numbering",
+    )
+    parser.add_argument(
+        "input_file",
+        nargs="?",
+        default="-",
+    )
+    parser.add_argument("-p", "--prefix", default="T ", help="Prefix for labels")
+    numbers_group = parser.add_mutually_exclusive_group()
+    numbers_group.add_argument(
+        "-n",
+        "--numbers",
+        dest="numbers",
+        action="store_true",
+        default=True,
+        help="Include numbering in labels (default)",
+    )
+    numbers_group.add_argument(
+        "-N",
+        "--no-numbers",
+        dest="numbers",
+        action="store_false",
+        help="Omit numbering in labels",
+    )
+    parser.add_argument(
+        "-i",
+        "--instant",
+        action="store_true",
+        help="Use same value for start and end time of labels",
+    )
 
-        sys.stderr.write(
-            f"{prg} using start beat {inv(str(start_beat))} beats per bar {inv(str(beats_per_bar))} start number {inv(str(start))}\n"
-        )
-        sys.stderr.write(
-            "If this is not what you intended, make sure to add a blank after the parameters before redirecting >\n"
-        )
+    args = parser.parse_args()
 
-        if input_file == "-":
-            input_gen = (line for line in sys.stdin)
+    prg = Path(__file__).name
+
+    sys.stderr.write(
+        f"{prg} using start beat {inv(str(args.start_beat))} beats per bar {inv(str(args.beats_per_bar))} start number {inv(str(args.start))}\n"
+    )
+    sys.stderr.write(
+        "If this is not what you intended, make sure to add a blank after the parameters before redirecting >\n"
+    )
+
+    if args.input_file == "-":
+        input_gen = (line for line in sys.stdin)
+        gen = beats2bars(
+            input_gen,
+            args.start_beat,
+            args.beats_per_bar,
+            args.start,
+            args.numbers,
+            args.prefix,
+            args.instant,
+        )
+        process(gen)
+    else:
+        with open(args.input_file, "r") as f:
+            input_gen = (line for line in f)
             gen = beats2bars(
-                input_gen, start_beat, beats_per_bar, start, numbers, prefix, instant
+                input_gen,
+                args.start_beat,
+                args.beats_per_bar,
+                args.start,
+                args.numbers,
+                args.prefix,
+                args.instant,
             )
             process(gen)
-        else:
-            with open(input_file, "r") as f:
-                input_gen = (line for line in f)
-                gen = beats2bars(
-                    input_gen,
-                    start_beat,
-                    beats_per_bar,
-                    start,
-                    numbers,
-                    prefix,
-                    instant,
-                )
-                process(gen)
-
-    app()
