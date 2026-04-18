@@ -60,5 +60,32 @@ Example invocation (I want to count 4/4 bars starting at beat 3)
 ```console
 beats2bars.py 3 4 1 beats.txt > audacity_bars.txt
 ```
+
+### Dir-mode
+
+If the `input_file` positional is actually a directory, `beats2bars.py` finds the unique `beats_<stem>.txt` inside it and writes `bars_<stem>.txt` in the same directory. No stdout redirection needed.
+
+```console
+# ~/song/ contains beats_song.txt; writes bars_song.txt in the same dir:
+beats2bars.py 3 4 1 ~/song/
+```
+
+Errors out if the directory contains zero or multiple `beats_*.txt` files.
+
+### Prefix
+
+Labels have no prefix by default. Use `-p` to add one:
+
+```console
+beats2bars.py -p "T " 1 4 1 beats.txt   # labels become "T 1", "T 2", ...
+```
+
+### Output format
+
+Bars are emitted as zero-duration event labels (`time\ttime\tN`) by default - one tick per downbeat. Use `-s`/`--span` for duration labels that cover each bar:
+
+```console
+beats2bars.py -s 1 4 1 beats.txt        # start\tend\tN instead of start\tstart\tN
+```
 ## See also
 [rebuildap](https://github.com/bwagner/rebuildap), [shift_labels](https://github.com/bwagner/shift_labels), [quantize_labels](https://github.com/bwagner/quantize_labels), [audacity_legatize](https://github.com/bwagner/audacity_legatize), [pyaudacity](https://github.com/bwagner/pyaudacity)

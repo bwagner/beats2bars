@@ -10,14 +10,31 @@ from statistics import mean
 from typing import Generator, Iterator, Tuple
 
 
+def _discover_beats_file(directory: Path) -> Path:
+    """Find the unique beats_*.txt in directory. Raises ValueError on 0 or >1."""
+    matches = sorted(directory.glob("beats_*.txt"))
+    if not matches:
+        raise ValueError(f"no beats_*.txt in {directory}")
+    if len(matches) > 1:
+        names = ", ".join(p.name for p in matches)
+        raise ValueError(f"multiple beats files in {directory}: {names}")
+    return matches[0]
+
+
+def _beats_to_bars_path(beats_path: Path) -> Path:
+    """Return the parallel bars_<stem>.txt path next to beats_<stem>.txt."""
+    stem = beats_path.name.removeprefix("beats_").removesuffix(".txt")
+    return beats_path.parent / f"bars_{stem}.txt"
+
+
 def beats2bars(
     input_generator: Iterator[str],
     start_beat: int,
     beats_per_bar: int,
     start: int,
     numbers: bool = True,
-    prefix: str = "T ",
-    instant: bool = False,
+    prefix: str = "",
+    span: bool = False,
 ) -> Generator[str, None, Tuple[float, float]]:
     """
     Processes the input from a generator, converting a sequence of beat timestamps
@@ -32,8 +49,8 @@ def beats2bars(
                              Nth beat, where N is the number of beats per bar (i.e., time signature).
         start (int): The starting label number. This is the number of the first labeled bar.
         numbers (bool): Whether to include numbering in the labels.
-        prefix (str): The prefix for the labels (default is "T ").
-        instant (bool): If True, use the same timestamp for start and end of label (zero duration).
+        prefix (str): The prefix for the labels (default is "" - no prefix).
+        span (bool): If True, emit duration labels (start...end). Default False emits zero-duration event labels at each downbeat.
 
     Yields:
         str: The beat labels as formatted strings.
@@ -69,7 +86,7 @@ def beats2bars(
 
         if beat_index >= start_beat:
             if lbl_counter % beats_per_bar == 0:
-                if not instant and bar_start_time is not None:
+                if span and bar_start_time is not None:
                     # Emit duration label (from previous bar_start_time to current_time)
                     lbl = f"{prefix}{lbl_no}" if numbers else prefix
                     yield f"{bar_start_time}\t{current_time}\t{lbl}"
@@ -77,8 +94,8 @@ def beats2bars(
 
                 bar_start_time = current_time  # Store start of new bar
 
-                if instant:
-                    # Emit zero-length label
+                if not span:
+                    # Emit zero-length event label at the downbeat
                     lbl = f"{prefix}{lbl_no}" if numbers else prefix
                     yield f"{current_time}\t{current_time}\t{lbl}"
                     lbl_no += 1
@@ -163,7 +180,12 @@ if __name__ == "__main__":
         nargs="?",
         default="-",
     )
-    parser.add_argument("-p", "--prefix", default="T ", help="Prefix for labels")
+    parser.add_argument(
+        "-p",
+        "--prefix",
+        default="",
+        help='Prefix for labels (default: "" - no prefix)',
+    )
     numbers_group = parser.add_mutually_exclusive_group()
     numbers_group.add_argument(
         "-n",
@@ -181,10 +203,10 @@ if __name__ == "__main__":
         help="Omit numbering in labels",
     )
     parser.add_argument(
-        "-i",
-        "--instant",
+        "-s",
+        "--span",
         action="store_true",
-        help="Use same value for start and end time of labels",
+        help="Emit duration labels (start...end). Default: zero-duration events at each downbeat.",
     )
 
     args = parser.parse_args()
@@ -207,9 +229,35 @@ if __name__ == "__main__":
             args.start,
             args.numbers,
             args.prefix,
-            args.instant,
+            args.span,
         )
         process(gen)
+    elif Path(args.input_file).is_dir():
+        try:
+            beats_path = _discover_beats_file(Path(args.input_file))
+        except ValueError as e:
+            sys.stderr.write(f"Error: {e}\n")
+            sys.exit(1)
+        bars_path = _beats_to_bars_path(beats_path)
+        sys.stderr.write(f"Dir-mode: {beats_path.name} -> {bars_path.name}\n")
+        with open(beats_path, "r") as f, open(bars_path, "w") as out:
+            input_gen = (line for line in f)
+            gen = beats2bars(
+                input_gen,
+                args.start_beat,
+                args.beats_per_bar,
+                args.start,
+                args.numbers,
+                args.prefix,
+                args.span,
+            )
+            try:
+                while True:
+                    out.write(next(gen) + "\n")
+            except StopIteration as e:
+                avg_duration, avg_bpm = e.value
+                sys.stderr.write(f"Average bar duration: {avg_duration:.2f} seconds\n")
+                sys.stderr.write(f"Average BPM: {avg_bpm:.2f}\n")
     else:
         with open(args.input_file, "r") as f:
             input_gen = (line for line in f)
@@ -220,6 +268,6 @@ if __name__ == "__main__":
                 args.start,
                 args.numbers,
                 args.prefix,
-                args.instant,
+                args.span,
             )
             process(gen)
