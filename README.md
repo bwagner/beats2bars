@@ -88,4 +88,4 @@ Bars are emitted as zero-duration event labels (`time\ttime\tN`) by default - on
 beats2bars.py -s 1 4 1 beats.txt        # start\tend\tN instead of start\tstart\tN
 ```
 ## See also
-[rebuildap](https://github.com/bwagner/rebuildap), [shift_labels](https://github.com/bwagner/shift_labels), [quantize_labels](https://github.com/bwagner/quantize_labels), [audacity_legatize](https://github.com/bwagner/audacity_legatize), [pyaudacity](https://github.com/bwagner/pyaudacity)
+[rebuildap](https://github.com/bwagner/rebuildap), [audacity_shift_labels](https://github.com/bwagner/audacity_shift_labels), [quantize_labels](https://github.com/bwagner/quantize_labels), [audacity_legatize](https://github.com/bwagner/audacity_legatize), [pyaudacity](https://github.com/bwagner/pyaudacity)
